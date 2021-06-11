@@ -11,13 +11,13 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import GradientBoostingRegressor
-
+from sklearn.metrics import mean_squared_error
 
 # Importando dados
 
-dados = pd.read_csv("ImóvelDados\conjunto_de_treinamento.csv")
-dados_teste = pd.read_csv("ImóvelDados\conjunto_de_teste.csv")
-exemplo = pd.read_csv("ImóvelDados\exemplo_arquivo_respostas.csv")
+dados = pd.read_csv("ImovelDados\conjunto_de_treinamento.csv")
+dados_teste = pd.read_csv("ImovelDados\conjunto_de_teste.csv")
+exemplo = pd.read_csv("ImovelDados\exemplo_arquivo_respostas.csv")
 
 
 # Definindo índices
@@ -122,12 +122,13 @@ def resultados(grid):
 parametersRF = {
     "max_depth":[4],
     "max_features": ['auto'],
-    "n_estimators": [500],
+    "n_estimators": [1500],
     "min_samples_leaf":[5],
-    "criterion":['mae']
+    "criterion":['mae'],
+    'min_samples_split':[2]
     }
 
-gridRF = GridSearchCV(RandomForestRegressor(), parametersRF, cv=2, verbose=2, n_jobs =-1)
+gridRF = GridSearchCV(RandomForestRegressor(), parametersRF,  scoring='neg_root_mean_squared_error',cv=2, verbose=2, n_jobs =-1)
 gridRF.fit(X, y)
 
 resultadosRF = resultados(gridRF)
@@ -135,9 +136,48 @@ bestRF = gridRF.best_estimator_
 bestRF.fit(X,y)
 respostaRF = bestRF.predict(dados_teste)
 
+'''
+# KNN
+
+# Best params {'algorithm': 'auto', 'n_neighbors': 651, 'p': 1, 'weights': 'uniform'}
+
+
+parametersKNN = {
+    "p": [1,2],
+    "n_neighbors": [651],
+    'weights': ['uniform'],
+    'algorithm':['auto']
+    }
+
+gridknn = GridSearchCV(KNeighborsRegressor(), parametersKNN, cv=35, verbose=2, n_jobs =-1)
+gridknn.fit(X,y)
+
+resultadosknn = resultados(gridknn)
+bestknn = gridknn.best_estimator_
+bestknn.fit(X,y)
+respostaknn = bestknn.predict(dados_teste)
+'''
+'''
+# Grid Gradient Boost Classifier
+
+
+# Melhores Parametros {'learning_rate': 0.001, 'max_depth': 1, 'n_estimators': 750}
+parametersGB = {
+    'learning_rate': [0.001],
+    "n_estimators": [750],
+    'max_depth': [1,4,7,10,13]
+    }
+gridGB = GridSearchCV(GradientBoostingRegressor(), parametersGB, scoring='neg_root_mean_squared_error', cv=5, verbose=2, n_jobs =-1)
+gridGB.fit(X, y)
+
+resultadosGB = resultados(gridGB)
+bestGB = gridGB.best_estimator_
+bestGB.fit(X,y)
+respostaGB = bestGB.predict(dados_teste)
+'''
 # Resposta para csv
 
 resposta_final = respostaRF
 
-exemplo['preco'] = respostaRF
+exemplo['preco'] = resposta_final
 exemplo.to_csv('resposta1.csv', index= False)
